@@ -1,0 +1,2 @@
+example1.cpp: include/InitShader.cpp include/Angel.h include/vec.h \
+ include/mat.h include/CheckError.h
