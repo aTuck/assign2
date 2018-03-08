@@ -47,6 +47,9 @@ const GLfloat UPPER_ARM_WIDTH  = 0.5;
 
 // User parameters to move arm
 int old_x, old_y, old_z, new_x, new_y, new_z;
+float ix = 0;
+float iy = 0;
+float iz = 0;
 int animation_speed;
 
 // Shader transformation matrices
@@ -150,16 +153,6 @@ sphere()
 void
 display( void )
 {
-    glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-
-    // Accumulate ModelView Matrix as we traverse the tree
-    model_view = RotateY( Theta[Base] );
-    base();
-
-    model_view *= ( Translate(0.0, BASE_HEIGHT, 0.0) *
-		            RotateZ( Theta[LowerArm]) );
-    lower_arm();
-
     // Vector math attempt ******
     //
     // vec2 ball = (old_x, old_y);
@@ -194,9 +187,50 @@ display( void )
     //
     // Theta[UpperArm] = angle;
 
-    Theta[UpperArm] = 90;
-    model_view *= ( Translate(old_x - UPPER_ARM_HEIGHT, LOWER_ARM_HEIGHT, 0.0) *
-		            RotateZ( Theta[UpperArm]) );
+    glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+
+    float bendAngle = 0;
+    float tiltAngle = 0;
+    float zAngle = 0;
+    float length = 0;
+
+    if (ix < old_x){
+        ix+=.1;
+    }
+    if (iy < old_y){
+        iy+=.1;
+    }
+    if (iz < old_z){
+        iz+=.1;
+    }
+
+    length = sqrt(ix*ix + iy*iy + iz*iz);
+    printf("Length is:%f\n", length);
+
+    bendAngle = cos(length/10)*cos(length/10) - (sin(length/10) * sin(length/10));
+    bendAngle *= (180.0/3.141592653589793238463);
+    printf("bendAngle is:%f\n", bendAngle);
+
+    tiltAngle = acos( iy / sqrt(iz*iz + ix*ix + iy*iy) );
+    tiltAngle *= (180.0/3.141592653589793238463);
+    printf("tiltAngle is:%f\n", tiltAngle);
+
+    zAngle = atan( iz / sqrt(iz*iz+ix*ix) );
+    zAngle *= (180.0/3.141592653589793238463);
+    printf("zAngle is:%f\n\n", zAngle);
+
+    // Accumulate ModelView Matrix as we traverse the tree
+    model_view = RotateY( Theta[Base] );
+    base();
+
+    // Lower Arm
+    model_view *= ( Translate(0.0, BASE_HEIGHT, 0.0) *
+                    RotateZ( -2 * bendAngle ) * RotateZ( tiltAngle ) * RotateY ( zAngle ) );
+    lower_arm();
+
+    // Upper Arm
+    model_view *= ( Translate(0, LOWER_ARM_HEIGHT, 0.0) *
+                    RotateZ( bendAngle ) * RotateZ( tiltAngle ) * RotateY ( zAngle ) );
     upper_arm();
 
     model_view *= ( Translate(old_x, old_y, old_z) *
